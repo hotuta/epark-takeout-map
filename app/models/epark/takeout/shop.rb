@@ -12,7 +12,7 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     page = 1
     loop do
-      stores_url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{DateTime.now.strftime('%2F')}&sort=2"
+      stores_url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{(DateTime.now + 1).strftime('%2F')}&sort=2"
       puts stores_url
       response = RestClient.get stores_url, header
       json = response.body
