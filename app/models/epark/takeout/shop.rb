@@ -51,6 +51,7 @@ class Epark::Takeout::Shop < ApplicationRecord
               shop_product.url = detail.css(".fn-product-name > a")[0][:href]
             end
             break if details.count < 9
+            page += 1
           end
 
           combination_and_order_allowed(takeout_shop, prices, minimum_order)
