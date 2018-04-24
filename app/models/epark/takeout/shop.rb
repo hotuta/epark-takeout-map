@@ -35,9 +35,9 @@ class Epark::Takeout::Shop < ApplicationRecord
 
         unless menu_doc.css('a[bookmark_shop_id]').present?
           prices = []
-          page = 1
+          menu_page = 1
           loop do
-            old_menu_response = RestClient.get shop["url"] + "/menu?page=#{page}"
+            old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
             old_menu_doc = Nokogiri::HTML(old_menu_response.body)
 
             details = old_menu_doc.css(".box > .detail")
@@ -51,7 +51,7 @@ class Epark::Takeout::Shop < ApplicationRecord
               shop_product.url = detail.css(".fn-product-name > a")[0][:href]
             end
             break if details.count < 9
-            page += 1
+            menu_page += 1
           end
 
           combination_and_order_allowed(takeout_shop, prices, minimum_order)
