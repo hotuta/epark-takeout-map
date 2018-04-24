@@ -18,7 +18,7 @@ class Epark::Takeout::Shop < ApplicationRecord
       json = response.body
       hash = JSON.parse(json)
       shops_hash = hash["shops"]
-      break unless shops_hash
+      break unless shops_hash.present?
       @takeout_shops = []
       shops_hash.each do |shop|
         takeout_shop = Epark::Takeout::Shop.new
