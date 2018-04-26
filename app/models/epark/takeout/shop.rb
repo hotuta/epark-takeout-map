@@ -59,6 +59,8 @@ class Epark::Takeout::Shop < ApplicationRecord
                 prices << shop_product.price
               end
               shop_product.url = "https://takeout.epark.jp#{product_doc.css(".item_link > a")[0][:href]}"
+
+              @takeout_shops << takeout_shop
             end
             left_count = products_hash["total_product_count_num"] - products_hash["item_count"] - loaded_product_count
             puts left_count
@@ -80,14 +82,13 @@ class Epark::Takeout::Shop < ApplicationRecord
                 prices << shop_product.price
               end
               shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+
+              @takeout_shops << takeout_shop
             end
             break if details.count < 9
             menu_page += 1
           end
         end
-
-        p prices
-        combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
       end
       Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination, :order_allowed]}
       page += 1
@@ -95,6 +96,8 @@ class Epark::Takeout::Shop < ApplicationRecord
   end
 
   def self.combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
+    p prices
+
     combination_prices = []
     price_min = 1080
     if prices.present? && minimum_order <= price_max
