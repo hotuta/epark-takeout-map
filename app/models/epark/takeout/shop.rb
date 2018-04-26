@@ -87,7 +87,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         p prices
         combination_and_order_allowed(takeout_shop, prices, minimum_order)
       end
-      Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination]}
+      Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination, :order_allowed]}
       page += 1
     end
   end
