@@ -33,6 +33,8 @@ class Epark::Takeout::Shop < ApplicationRecord
         menu_header = {x_requested_with: "XMLHttpRequest", cookies: menu_response.cookies}
         menu_doc = Nokogiri::HTML(menu_response.body)
 
+        price_max = 1110
+
         prices = []
         if menu_doc.css('a[bookmark_shop_id]').present?
           # APIのshop_idとメニューに必要なshop_idが違う:sob:
@@ -53,7 +55,7 @@ class Epark::Takeout::Shop < ApplicationRecord
               shop_product = takeout_shop.products.build
               shop_product.name = product_doc.css(".item_title").text
               shop_product.price = product_doc.css(".item_price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2')
-              if shop_product.price <= 1110
+              if shop_product.price <= price_max
                 prices << shop_product.price
               end
               shop_product.url = "https://takeout.epark.jp#{product_doc.css(".item_link > a")[0][:href]}"
@@ -74,7 +76,7 @@ class Epark::Takeout::Shop < ApplicationRecord
               shop_product = takeout_shop.products.build
               shop_product.name = detail.css(".fn-product-name > a").text
               shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-              if shop_product.price <= 1110
+              if shop_product.price <= price_max
                 prices << shop_product.price
               end
               shop_product.url = detail.css(".fn-product-name > a")[0][:href]
@@ -85,17 +87,16 @@ class Epark::Takeout::Shop < ApplicationRecord
         end
 
         p prices
-        combination_and_order_allowed(takeout_shop, prices, minimum_order)
+        combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
       end
       Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination, :order_allowed]}
       page += 1
     end
   end
 
-  def self.combination_and_order_allowed(takeout_shop, prices, minimum_order)
+  def self.combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
     combination_prices = []
     price_min = 1080
-    price_max = 1110
     if prices.present? && minimum_order <= price_max
       1.upto((price_max / prices.min).ceil) do |count|
         hit_count = 0
