@@ -1,5 +1,6 @@
 class Epark::Takeout::Shop < ApplicationRecord
   has_many :products
+  has_many :combinations
 
   @session = Capybara::Session.new(:chrome)
 
@@ -59,8 +60,6 @@ class Epark::Takeout::Shop < ApplicationRecord
                 prices << shop_product.price
               end
               shop_product.url = "https://takeout.epark.jp#{product_doc.css(".item_link > a")[0][:href]}"
-
-              @takeout_shops << takeout_shop
             end
             left_count = products_hash["total_product_count_num"] - products_hash["item_count"] - loaded_product_count
             puts left_count
@@ -82,13 +81,13 @@ class Epark::Takeout::Shop < ApplicationRecord
                 prices << shop_product.price
               end
               shop_product.url = detail.css(".fn-product-name > a")[0][:href]
-
-              @takeout_shops << takeout_shop
             end
             break if details.count < 9
             menu_page += 1
           end
         end
+
+        combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
       end
       Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination, :order_allowed]}
       page += 1
@@ -98,16 +97,15 @@ class Epark::Takeout::Shop < ApplicationRecord
   def self.combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
     p prices
 
-    combination_prices = []
+    combinations = []
     price_min = 1080
     if prices.present? && minimum_order <= price_max
       1.upto((price_max / prices.min).ceil) do |count|
         hit_count = 0
         # 重複組合せを順に取り出す
-        prices.uniq.repeated_combination(count) do |price|
-          if price.sum >= price_min && price.sum <= price_max
-            combination_prices << price
-            combination_prices << "合計#{price.sum}"
+        prices.uniq.repeated_combination(count) do |combination_price|
+          if combination_price.sum >= price_min && combination_price.sum <= price_max
+            combinations << combination_price
             hit_count += 1
           end
         end
@@ -115,13 +113,43 @@ class Epark::Takeout::Shop < ApplicationRecord
       end
     end
 
-    if combination_prices.present?
-      takeout_shop.combination = combination_prices.join(",")
+    if combinations.present?
+      pattern = 0
+      combinations.each do |combination|
+        total_price = combination.sum
+        combination.each do |combination_price|
+          combination_products = takeout_shop.products.select do |n|
+            n.price == combination_price
+          end
+
+          if combination_products.count >= 2
+            # 同一金額商品が複数ある場合
+            candidate = 1
+          else
+            # 同一金額商品が一つだけ
+            candidate = 0
+          end
+
+          combination_products.each do |combination_product|
+            shop_combination = takeout_shop.combinations.build
+            shop_combination.pattern = pattern
+            shop_combination.candidate = candidate
+            shop_combination.total_price = total_price
+            shop_combination.price = combination_product.price
+            shop_combination.name = combination_product.name
+            shop_combination.url = combination_product.url
+            candidate += 1
+          end
+        end
+        pattern += 1
+      end
+
       takeout_shop.order_allowed = true
     else
       puts "#{minimum_order}円以上"
       takeout_shop.order_allowed = false
     end
+
     @takeout_shops << takeout_shop
   end
 end
