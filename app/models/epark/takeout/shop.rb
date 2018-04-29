@@ -5,8 +5,9 @@ class Epark::Takeout::Shop < ApplicationRecord
   @session = Capybara::Session.new(:chrome)
 
   def self.get_shop_and_product
-    # FIXME: 商品情報を更新するために削除
+    # FIXME: 情報を更新するために削除
     Epark::Takeout::Shop::Product.delete_all
+    Epark::Takeout::Shop::Combination.delete_all
 
     get = RestClient.get "https://takeout.epark.jp"
     header = {x_requested_with: "XMLHttpRequest", cookies: get.cookies}
