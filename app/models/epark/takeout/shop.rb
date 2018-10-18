@@ -35,7 +35,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         menu_header = {x_requested_with: "XMLHttpRequest", cookies: menu_response.cookies}
         menu_doc = Nokogiri::HTML(menu_response.body)
 
-        price_max = 1110
+        price_max = 520
 
           prices = []
           menu_page = 1
@@ -68,7 +68,7 @@ class Epark::Takeout::Shop < ApplicationRecord
     p prices
 
     combinations = []
-    price_min = 1080
+    price_min = 500
     if prices.present? && minimum_order <= price_max
       1.upto((price_max / prices.min).ceil) do |count|
         hit_count = 0
