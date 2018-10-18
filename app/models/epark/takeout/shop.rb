@@ -4,6 +4,14 @@ class Epark::Takeout::Shop < ApplicationRecord
 
   @session = Capybara::Session.new(:chrome)
 
+  class << self
+    def get_res_to_obj(url, headers)
+      res = RestClient.get(url, headers)
+      json = res.body
+      JSON.parse(json, object_class: OpenStruct).shops
+    end
+  end
+
   def self.get_shop_and_product
     # FIXME: 情報を更新するために削除
     Epark::Takeout::Shop::Product.delete_all
@@ -31,6 +39,8 @@ class Epark::Takeout::Shop < ApplicationRecord
         takeout_shop.coordinates = "#{shop["latitude"]},#{shop["longitude"]}"
         minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
 
+        next if minimum_order < 500
+
         menu_response = RestClient.get takeout_shop.menu_url
         menu_header = {x_requested_with: "XMLHttpRequest", cookies: menu_response.cookies}
         menu_doc = Nokogiri::HTML(menu_response.body)
@@ -57,69 +67,34 @@ class Epark::Takeout::Shop < ApplicationRecord
             menu_page += 1
           end
 
-        combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
+        next if prices.blank?
+        combination(takeout_shop, prices, 500, price_max)
       end
       Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination, :order_allowed]}
       page += 1
     end
   end
 
-  def self.combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
-    p prices
-
-    combinations = []
-    price_min = 500
-    if prices.present? && minimum_order <= price_max
-      1.upto((price_max / prices.min).ceil) do |count|
-        hit_count = 0
-        # 重複組合せを順に取り出す
-        prices.uniq.repeated_combination(count) do |combination_price|
-          if combination_price.sum >= price_min && combination_price.sum <= price_max
-            combinations << combination_price
-            hit_count += 1
-          end
+  def self.combination(takeout_shop, prices, price_min, price_max)
+    combination_prices = []
+    # 最大数/最小数の個数まで1つずつ増やして組み合わせてみる
+    1.upto((price_max / prices.min).ceil) do |count|
+      # 重複組合せを順に取り出す
+      prices.uniq.repeated_combination(count) do |price|
+        if price.sum >= price_min && price.sum <= price_max
+          combination_prices << price
         end
-        puts "#{hit_count}ヒット"
       end
     end
 
-    if combinations.present?
-      pattern = 0
-      combinations.each do |combination|
-        total_price = combination.sum
-        combination.each do |combination_price|
-          combination_products = takeout_shop.products.select do |n|
-            n.price == combination_price
-          end
-
-          if combination_products.count >= 2
-            # 同一金額商品が複数ある場合
-            candidate = 1
-          else
-            # 同一金額商品が一つだけ
-            candidate = 0
-          end
-
-          combination_products.each do |combination_product|
-            shop_combination = takeout_shop.combinations.build
-            shop_combination.pattern = pattern
-            shop_combination.candidate = candidate
-            shop_combination.total_price = total_price
-            shop_combination.price = combination_product.price
-            shop_combination.name = combination_product.name
-            shop_combination.url = combination_product.url
-            candidate += 1
-          end
-        end
-        pattern += 1
+    if combination_prices.present?
+      takeout_shop.combination = ""
+      combination_prices.sort_by {|combination_price| combination_price.sum}.each do |combination_price|
+        takeout_shop.combination += "#{combination_price}\n"
+        takeout_shop.combination += "合計#{combination_price.sum}円\n"
+        takeout_shop.order_allowed = true if combination_price.sum == 500
       end
-
-      takeout_shop.order_allowed = true
-    else
-      puts "#{minimum_order}円以上"
-      takeout_shop.order_allowed = false
+      @takeout_shops << takeout_shop
     end
-
-    @takeout_shops << takeout_shop
   end
 end
