@@ -37,37 +37,7 @@ class Epark::Takeout::Shop < ApplicationRecord
 
         price_max = 1110
 
-        prices = []
-        if menu_doc.css('a[bookmark_shop_id]').present?
-          # APIのshop_idとメニューに必要なshop_idが違う:sob:
-          shop_id = menu_doc.css('a[bookmark_shop_id]')[0][:bookmark_shop_id]
-
-          loaded_product_count = 0
-          while true
-            begin
-              products = RestClient.post("https://takeout.epark.jp/#{shop["code"]}/ajaxentry/shop_menu/read_more_products.php", {shop_id: shop_id, loaded_product_count: loaded_product_count, sort: 3}, menu_header) {|response| response}
-            rescue RestClient::MovedPermanently => err
-              binding.pry
-            end
-            products_json = products.body
-            products_hash = JSON.parse(products_json)
-            break unless products_hash["products_html"]
-            products_hash["products_html"].each do |product_html|
-              product_doc = Nokogiri::HTML(product_html)
-              shop_product = takeout_shop.products.build
-              shop_product.name = product_doc.css(".item_title").text
-              shop_product.price = product_doc.css(".item_price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2')
-              if shop_product.price <= price_max
-                prices << shop_product.price
-              end
-              shop_product.url = "https://takeout.epark.jp#{product_doc.css(".item_link > a")[0][:href]}"
-            end
-            left_count = products_hash["total_product_count_num"] - products_hash["item_count"] - loaded_product_count
-            puts left_count
-            break if left_count == 0
-            loaded_product_count += products_hash["item_count"]
-          end
-        else
+          prices = []
           menu_page = 1
           loop do
             old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
@@ -86,7 +56,6 @@ class Epark::Takeout::Shop < ApplicationRecord
             break if details.count < 9
             menu_page += 1
           end
-        end
 
         combination_and_order_allowed(takeout_shop, prices, price_max, minimum_order)
       end
