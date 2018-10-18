@@ -31,7 +31,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         takeout_shop.name = shop["name"]
         takeout_shop.access = shop["access"]
         takeout_shop.shop_url = shop["url"]
-        takeout_shop.menu_url = shop["url"] + "/menu?page=1"
+        takeout_shop.menu_url = shop["url"] + "/menu?category_id=0&min=&max=&sort=1&page=1"
         takeout_shop.coordinates = "#{shop["latitude"]},#{shop["longitude"]}"
         minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
 
