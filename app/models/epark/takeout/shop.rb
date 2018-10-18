@@ -35,13 +35,12 @@ class Epark::Takeout::Shop < ApplicationRecord
         takeout_shop.coordinates = "#{shop["latitude"]},#{shop["longitude"]}"
         minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
 
-        next if minimum_order < 500
+        price_max = 520
+        next if minimum_order > price_max
 
         menu_response = RestClient.get takeout_shop.menu_url
         menu_header = {x_requested_with: "XMLHttpRequest", cookies: menu_response.cookies}
         menu_doc = Nokogiri::HTML(menu_response.body)
-
-        price_max = 520
 
         prices = []
         menu_page = 1
