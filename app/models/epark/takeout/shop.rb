@@ -22,20 +22,16 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     page = 1
     loop do
-      stores_url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{(DateTime.now + 1).strftime('%2F')}&sort=2"
-      puts stores_url
-      response = RestClient.get stores_url, header
-      json = response.body
-      hash = JSON.parse(json)
-      shops_hash = hash["shops"]
-      break unless shops_hash.present?
+      header = {Accept: '*/*', X_Requested_With: 'XMLHttpRequest'}
+      shops = get_res_to_obj("https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=2018%2F10%2F19&sort=1", header)
+
       @takeout_shops = []
-      shops_hash.each do |shop|
+      shops.each do |shop|
         takeout_shop = Epark::Takeout::Shop.new
         takeout_shop.name = shop["name"]
         takeout_shop.access = shop["access"]
-        takeout_shop.shop_url = "https://takeout.epark.jp/#{shop["code"]}"
-        takeout_shop.menu_url = "https://takeout.epark.jp/#{shop["code"]}/menu.php?sort=3&serach_word="
+        takeout_shop.shop_url = shop["url"]
+        takeout_shop.menu_url = shop["url"] + "/menu?page=1"
         takeout_shop.coordinates = "#{shop["latitude"]},#{shop["longitude"]}"
         minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
 
@@ -47,25 +43,26 @@ class Epark::Takeout::Shop < ApplicationRecord
 
         price_max = 520
 
-          prices = []
-          menu_page = 1
-          loop do
-            old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
-            old_menu_doc = Nokogiri::HTML(old_menu_response.body)
+        prices = []
+        menu_page = 1
+        loop do
+          puts shop["url"] + "/menu?page=#{menu_page}"
+          old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
+          old_menu_doc = Nokogiri::HTML(old_menu_response.body)
 
-            details = old_menu_doc.css(".box > .detail")
-            details.each do |detail|
-              shop_product = takeout_shop.products.build
-              shop_product.name = detail.css(".fn-product-name > a").text
-              shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-              if shop_product.price <= price_max
-                prices << shop_product.price
-              end
-              shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+          details = old_menu_doc.css(".box > .detail")
+          details.each do |detail|
+            shop_product = takeout_shop.products.build
+            shop_product.name = detail.css(".fn-product-name > a").text
+            shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+            if shop_product.price <= price_max
+              prices << shop_product.price
             end
-            break if details.count < 9
-            menu_page += 1
+            shop_product.url = detail.css(".fn-product-name > a")[0][:href]
           end
+          break if details.count < 9
+          menu_page += 1
+        end
 
         next if prices.blank?
         combination(takeout_shop, prices, 500, price_max)
