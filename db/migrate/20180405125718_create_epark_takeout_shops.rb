@@ -5,7 +5,7 @@ class CreateEparkTakeoutShops < ActiveRecord::Migration[5.1]
       t.text :access
       t.text :shop_url
       t.text :menu_url
-      t.boolean :order_allowed, default: true, null: false
+      t.boolean :order_allowed, default: false, null: false
       t.text :combination
       t.text :coordinates
 
