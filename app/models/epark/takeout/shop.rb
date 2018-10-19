@@ -22,8 +22,11 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     page = 1
     loop do
+      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=2018%2F10%2F19&sort=1"
+      puts url
+
       header = {Accept: '*/*', X_Requested_With: 'XMLHttpRequest'}
-      shops = get_res_to_obj("https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=2018%2F10%2F19&sort=1", header)
+      shops = get_res_to_obj(url, header)
 
       @takeout_shops = []
       shops.each do |shop|
