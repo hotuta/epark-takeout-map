@@ -69,7 +69,9 @@ class Epark::Takeout::Shop < ApplicationRecord
         next if prices.blank?
         combination(takeout_shop, prices, 500, price_max)
       end
-      Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: [:name, :access, :coordinates, :menu_url, :combination, :order_allowed]}
+
+      columns = Epark::Takeout::Shop.column_names - ["id", "shop_url", "created_at", "updated_at"]
+      Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: columns}
       page += 1
     end
   end
