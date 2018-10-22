@@ -54,13 +54,15 @@ class Epark::Takeout::Shop < ApplicationRecord
 
           details = old_menu_doc.css(".box > .detail")
           details.each do |detail|
-            shop_product = takeout_shop.products.build
-            shop_product.name = detail.css(".fn-product-name > a").text
-            shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-            if shop_product.price <= price_max
-              prices << shop_product.price
-            end
-            shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+            price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+            prices << shop_product.price if price <= price_max
+            # shop_product = takeout_shop.products.build
+            # shop_product.name = detail.css(".fn-product-name > a").text
+            # shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+            # if shop_product.price <= price_max
+            #   prices << shop_product.price
+            # end
+            # shop_product.url = detail.css(".fn-product-name > a")[0][:href]
           end
           break if details.count < 9
           menu_page += 1
