@@ -74,6 +74,8 @@ class Epark::Takeout::Shop < ApplicationRecord
 
       columns = Epark::Takeout::Shop.column_names - ["id", "shop_url", "created_at", "updated_at"]
       Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: columns}
+
+      break if shops.count < 10
       page += 1
     end
   end
