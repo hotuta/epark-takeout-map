@@ -38,7 +38,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         takeout_shop.coordinates = "#{shop["latitude"]},#{shop["longitude"]}"
         minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
 
-        price_max = 2000
+        price_max = 1000
         next if minimum_order > price_max
 
         menu_response = RestClient.get takeout_shop.menu_url
