@@ -36,10 +36,10 @@ class Epark::Takeout::Shop < ApplicationRecord
         takeout_shop.shop_url = shop["url"]
         takeout_shop.menu_url = shop["url"] + "/menu?category_id=0&min=&max=&sort=1&page=1"
         takeout_shop.coordinates = "#{shop["latitude"]},#{shop["longitude"]}"
-        minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+        takeout_shop.minimum_order = shop["minimumOrder"].gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
 
         price_max = 1000
-        next if minimum_order > price_max
+        next if takeout_shop.minimum_order > price_max
 
         menu_response = RestClient.get takeout_shop.menu_url
         menu_header = {x_requested_with: "XMLHttpRequest", cookies: menu_response.cookies}
@@ -86,7 +86,7 @@ class Epark::Takeout::Shop < ApplicationRecord
     1.upto((price_max / prices.min).ceil) do |count|
       # 重複組合せを順に取り出す
       prices.uniq.repeated_combination(count) do |price|
-        if price.sum >= price_min && price.sum <= price_max
+        if price.sum >= price_min && price.sum <= price_max && price.sum >= takeout_shop.minimum_order
           combination_prices << price
         end
       end
