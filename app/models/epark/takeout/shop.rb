@@ -75,7 +75,11 @@ class Epark::Takeout::Shop < ApplicationRecord
       columns = Epark::Takeout::Shop.column_names - ["id", "shop_url", "created_at", "updated_at"]
       Epark::Takeout::Shop.import @takeout_shops, recursive: true, on_duplicate_key_update: {conflict_target: [:shop_url], columns: columns}
 
-      break if shops.blank?
+      if shops.blank?
+        puts "終了"
+        break
+      end
+
       page += 1
     end
   end
