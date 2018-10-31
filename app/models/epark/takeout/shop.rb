@@ -86,10 +86,12 @@ class Epark::Takeout::Shop < ApplicationRecord
 
   def self.combination(takeout_shop, prices, price_min, price_max)
     combination_prices = []
+
+    # 50円未満の商品を組み合わせを取得しようとすると処理時間が異様に長くなるため、暫定処置
+    prices.reject!{|p| p < 50}
+
     # 最大数/最小数の個数まで1つずつ増やして組み合わせてみる
     1.upto((price_max / prices.min).ceil) do |count|
-      # 50円未満の商品を組み合わせを取得しようとすると処理時間が異様に長くなるため、暫定処置
-      prices.reject!{|p| p < 50}
       # 重複組合せを順に取り出す
       prices.uniq.repeated_combination(count) do |price|
         if price.sum >= price_min && price.sum <= price_max && price.sum >= takeout_shop.minimum_order
