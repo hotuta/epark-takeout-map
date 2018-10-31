@@ -22,7 +22,7 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     page = 1
     loop do
-      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=2018%2F10%2F19&sort=1"
+      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.today.strftime("%Y/%m/%d")}&sort=1"
       puts url
 
       header = {Accept: '*/*', X_Requested_With: 'XMLHttpRequest'}
