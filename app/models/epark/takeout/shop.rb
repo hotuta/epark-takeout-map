@@ -67,7 +67,7 @@ class Epark::Takeout::Shop < ApplicationRecord
               # end
               # shop_product.url = detail.css(".fn-product-name > a")[0][:href]
             end
-            break if details.count <= 9
+            break if details.count < 9
             menu_page += 1
           end
         end
