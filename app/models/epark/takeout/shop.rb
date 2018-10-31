@@ -23,7 +23,6 @@ class Epark::Takeout::Shop < ApplicationRecord
     page = 1
     loop do
       url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.today.strftime("%Y/%m/%d")}&sort=1"
-      puts url
 
       header = {Accept: '*/*', X_Requested_With: 'XMLHttpRequest'}
       shops = get_res_to_obj(url, header)
@@ -48,6 +47,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         prices = []
         menu_page = 1
         loop do
+          puts url
           puts shop["url"] + "/menu?page=#{menu_page}"
           old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
           old_menu_doc = Nokogiri::HTML(old_menu_response.body)
