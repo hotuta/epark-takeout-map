@@ -48,27 +48,29 @@ class Epark::Takeout::Shop < ApplicationRecord
 
         prices = []
         menu_page = 1
-        loop do
-          Retryable.retryable(tries: 5) do
-            puts url
-            puts shop["url"] + "/menu?page=#{menu_page}"
-            old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
-            old_menu_doc = Nokogiri::HTML(old_menu_response.body)
+        catch(:break_loop) do
+          loop do
+            Retryable.retryable(tries: 5) do
+              puts url
+              puts shop["url"] + "/menu?page=#{menu_page}"
+              old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
+              old_menu_doc = Nokogiri::HTML(old_menu_response.body)
 
-            details = old_menu_doc.css(".box > .detail")
-            details.each do |detail|
-              price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-              prices << price if price <= price_max
-              # shop_product = takeout_shop.products.build
-              # shop_product.name = detail.css(".fn-product-name > a").text
-              # shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-              # if shop_product.price <= price_max
-              #   prices << shop_product.price
-              # end
-              # shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+              details = old_menu_doc.css(".box > .detail")
+              details.each do |detail|
+                price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+                prices << price if price <= price_max
+                # shop_product = takeout_shop.products.build
+                # shop_product.name = detail.css(".fn-product-name > a").text
+                # shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+                # if shop_product.price <= price_max
+                #   prices << shop_product.price
+                # end
+                # shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+              end
+              throw :break_loop if details.count < 9
+              menu_page += 1
             end
-            break if details.count < 9
-            menu_page += 1
           end
         end
 
