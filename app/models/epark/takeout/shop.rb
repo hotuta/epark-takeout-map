@@ -6,9 +6,11 @@ class Epark::Takeout::Shop < ApplicationRecord
 
   class << self
     def get_res_to_obj(url, headers)
-      res = RestClient.get(url, headers)
-      json = res.body
-      JSON.parse(json, object_class: OpenStruct).shops
+      Retryable.retryable(tries: 5) do
+        res = RestClient.get(url, headers)
+        json = res.body
+        JSON.parse(json, object_class: OpenStruct).shops
+      end
     end
   end
 
@@ -47,25 +49,27 @@ class Epark::Takeout::Shop < ApplicationRecord
         prices = []
         menu_page = 1
         loop do
-          puts url
-          puts shop["url"] + "/menu?page=#{menu_page}"
-          old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
-          old_menu_doc = Nokogiri::HTML(old_menu_response.body)
+          Retryable.retryable(tries: 5) do
+            puts url
+            puts shop["url"] + "/menu?page=#{menu_page}"
+            old_menu_response = RestClient.get shop["url"] + "/menu?page=#{menu_page}"
+            old_menu_doc = Nokogiri::HTML(old_menu_response.body)
 
-          details = old_menu_doc.css(".box > .detail")
-          details.each do |detail|
-            price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-            prices << price if price <= price_max
-            # shop_product = takeout_shop.products.build
-            # shop_product.name = detail.css(".fn-product-name > a").text
-            # shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-            # if shop_product.price <= price_max
-            #   prices << shop_product.price
-            # end
-            # shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+            details = old_menu_doc.css(".box > .detail")
+            details.each do |detail|
+              price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+              prices << price if price <= price_max
+              # shop_product = takeout_shop.products.build
+              # shop_product.name = detail.css(".fn-product-name > a").text
+              # shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+              # if shop_product.price <= price_max
+              #   prices << shop_product.price
+              # end
+              # shop_product.url = detail.css(".fn-product-name > a")[0][:href]
+            end
+            break if details.count < 9
+            menu_page += 1
           end
-          break if details.count < 9
-          menu_page += 1
         end
 
         next if prices.blank?
@@ -88,7 +92,7 @@ class Epark::Takeout::Shop < ApplicationRecord
     combination_prices = []
 
     # 50円未満の商品を組み合わせを取得しようとすると処理時間が異様に長くなるため、暫定処置
-    prices.reject!{|p| p < 50}
+    prices.reject! {|p| p < 50}
 
     # 最大数/最小数の個数まで1つずつ増やして組み合わせてみる
     1.upto((price_max / prices.min).ceil) do |count|
