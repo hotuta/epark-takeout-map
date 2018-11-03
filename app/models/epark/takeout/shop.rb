@@ -99,7 +99,7 @@ class Epark::Takeout::Shop < ApplicationRecord
     # 最大数/最小数の個数まで1つずつ増やして組み合わせてみる
     1.upto((price_max / prices.min).ceil) do |count|
       # 重複組合せを順に取り出す
-      prices.uniq.repeated_combination(count) do |price|
+      prices.uniq.sort.repeated_combination(count) do |price|
         if price.sum >= price_min && price.sum <= price_max && price.sum >= takeout_shop.minimum_order
           combination_prices << price
         end
