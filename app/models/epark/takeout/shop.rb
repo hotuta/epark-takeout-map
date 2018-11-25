@@ -75,7 +75,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         end
 
         next if prices.blank?
-        combination(takeout_shop, prices, 500, price_max)
+        combination(takeout_shop, prices, 50, price_max)
       end
 
       columns = Epark::Takeout::Shop.column_names - ["id", "shop_url", "created_at", "updated_at"]
@@ -112,7 +112,8 @@ class Epark::Takeout::Shop < ApplicationRecord
         takeout_shop.combination_price_min = combination_price.sum if i == 0
         takeout_shop.combination += "#{combination_price}\n"
         takeout_shop.combination += "合計#{combination_price.sum}円\n"
-        takeout_shop.order_allowed = true if combination_price.sum == 500
+        takeout_shop.order_allowed = true if combination_price.sum <= 500
+        takeout_shop.order_500_allowed = true if combination_price.sum == 500
       end
       @takeout_shops << takeout_shop
     end
