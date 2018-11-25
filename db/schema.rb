@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20181030074036) do
+ActiveRecord::Schema.define(version: 20181125161949) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -53,7 +53,18 @@ ActiveRecord::Schema.define(version: 20181030074036) do
     t.datetime "updated_at", null: false
     t.integer "combination_price_min"
     t.integer "minimum_order"
+    t.boolean "order_500_allowed", default: false
     t.index ["shop_url"], name: "index_epark_takeout_shops_on_shop_url", unique: true
+  end
+
+  create_table "orders", force: :cascade do |t|
+    t.string "name"
+    t.text "adress"
+    t.string "email"
+    t.string "tel_number"
+    t.string "pay_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
 end
