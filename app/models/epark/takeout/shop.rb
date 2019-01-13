@@ -110,7 +110,7 @@ class Epark::Takeout::Shop < ApplicationRecord
       takeout_shop.combination = "\n"
       combination_prices.sort_by {|combination_price| combination_price.sum}.each_with_index do |combination_price, i|
         takeout_shop.combination_price_min = combination_price.sum if i == 0
-        takeout_shop.combination_price_500_min = combination_price.sum if takeout_shop.combination_price_500_min.blank? takeout_shop.combination += "#{combination_price}\n"
+        takeout_shop.combination_price_500_min = combination_price.sum if takeout_shop.combination_price_500_min.blank?
         takeout_shop.combination += "合計#{combination_price.sum}円\n"
         takeout_shop.order_allowed = true if combination_price.sum <= 500
         takeout_shop.order_500_allowed = true if combination_price.sum == 500
