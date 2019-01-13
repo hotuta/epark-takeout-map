@@ -84,7 +84,7 @@ ActiveRecord::Schema.define(version: 20190113065922) do
     t.integer "combination_price_min"
     t.integer "minimum_order"
     t.boolean "order_500_allowed", default: false
-    t.integer "combination_500"
+    t.text "combination_500"
     t.integer "combination_price_500_min"
     t.index ["shop_url"], name: "index_epark_takeout_shops_on_shop_url", unique: true
   end
