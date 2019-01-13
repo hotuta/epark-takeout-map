@@ -108,6 +108,8 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     if combination_prices.present?
       takeout_shop.combination = "\n"
+      takeout_shop.combination_500 = "\n"
+
       combination_prices.sort_by {|combination_price| combination_price.sum}.each_with_index do |combination_price, i|
         takeout_shop.combination_price_min = combination_price.sum if i == 0
         takeout_shop.combination_price_500_min = combination_price.sum if takeout_shop.combination_price_500_min.blank?
