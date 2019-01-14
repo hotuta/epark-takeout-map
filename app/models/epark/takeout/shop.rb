@@ -149,6 +149,7 @@ class Epark::Takeout::Shop < ApplicationRecord
 
       combination_prices.uniq.sort_by {|combination_price| combination_price.sum {|hash| hash[:total_price]}}.each_with_index do |combination_price, i|
         combination_price_sum = combination_price.sum {|hash| hash[:total_price]}
+        next if combination_price_sum > price_max
         takeout_shop.combination_price_min = combination_price_sum if i == 0
 
         if combination_price_sum >= 500
