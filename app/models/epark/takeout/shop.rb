@@ -58,8 +58,30 @@ class Epark::Takeout::Shop < ApplicationRecord
 
               details = old_menu_doc.css(".box > .detail")
               details.each do |detail|
+                targetid = detail.css(".favorite_product > a").first[:targetid].to_i
+                product_response = RestClient.get "https://takeout.epark.jp/ajax/order/box?product_id=#{targetid}"
+                product = JSON.parse(product_response, object_class: OpenStruct)
+
                 price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
-                prices << price if price <= price_max
+
+                # 50円未満の商品を組み合わせを取得しようとすると処理時間が異様に長くなるため、暫定処置
+                if price <= price_max && price > 50
+                  product_name = detail.css("div.title.fn-product-name > a").first.text
+                  product_link = detail.css("div.title.fn-product-name > a").first[:href]
+
+                  prices << {product_name: product_name, total_price: price, product_link: product_link}
+
+                  if product.detail.options.present?
+                    product.detail.options.each do |product_option|
+                      product_option.lists.each do |list|
+                        if list.price.present? && price + list.price <= price_max
+                          prices << {product_name: product_name, option_name: list.name, total_price: price + list.price, product_link: product_link}
+                        end
+                      end
+                    end
+                  end
+                end
+
                 # shop_product = takeout_shop.products.build
                 # shop_product.name = detail.css(".fn-product-name > a").text
                 # shop_product.price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
@@ -93,14 +115,15 @@ class Epark::Takeout::Shop < ApplicationRecord
   def self.combination(takeout_shop, prices, price_min, price_max)
     combination_prices = []
 
-    # 50円未満の商品を組み合わせを取得しようとすると処理時間が異様に長くなるため、暫定処置
-    prices.reject! {|p| p < 50}
+    prices_min = prices.min_by {|hash| hash[:total_price]}[:total_price]
 
     # 最大数/最小数の個数まで1つずつ増やして組み合わせてみる
-    1.upto((price_max / prices.min).ceil) do |count|
+    1.upto((price_max / prices_min).ceil) do |count|
       # 重複組合せを順に取り出す
-      prices.uniq.sort.repeated_combination(count) do |price|
-        if price.sum >= price_min && price.sum <= price_max && price.sum >= takeout_shop.minimum_order
+      prices.uniq.sort_by {|hash| hash[:total_price]}.repeated_combination(count) do |price|
+        price_sum = price.sum {|hash| hash[:total_price]}
+
+        if price_sum >= price_min && price_sum <= price_max && price_sum >= takeout_shop.minimum_order
           combination_prices << price
         end
       end
@@ -110,19 +133,20 @@ class Epark::Takeout::Shop < ApplicationRecord
       takeout_shop.combination = "\n"
       takeout_shop.combination_500 = "\n"
 
-      combination_prices.sort_by {|combination_price| combination_price.sum}.each_with_index do |combination_price, i|
-        takeout_shop.combination_price_min = combination_price.sum if i == 0
+      combination_prices.uniq.sort_by {|combination_price| combination_price.sum {|hash| hash[:total_price]}}.each_with_index do |combination_price, i|
+        combination_price_sum = combination_price.sum {|hash| hash[:total_price]}
+        takeout_shop.combination_price_min = combination_price_sum if i == 0
 
-        if combination_price.sum >= 500
-          takeout_shop.combination_price_500_min = combination_price.sum if takeout_shop.combination_price_500_min.blank?
+        if combination_price_sum >= 500
+          takeout_shop.combination_price_500_min = combination_price_sum if takeout_shop.combination_price_500_min.blank?
           takeout_shop.combination_500 += "#{combination_price}\n"
-          takeout_shop.combination_500 += "合計#{combination_price.sum}円\n"
+          takeout_shop.combination_500 += "合計#{combination_price_sum}円\n"
         end
 
         takeout_shop.combination += "#{combination_price}\n"
-        takeout_shop.combination += "合計#{combination_price.sum}円\n"
-        takeout_shop.order_allowed = true if combination_price.sum <= 500
-        takeout_shop.order_500_allowed = true if combination_price.sum == 500
+        takeout_shop.combination += "合計#{combination_price_sum}円\n"
+        takeout_shop.order_allowed = true if combination_price_sum <= 500
+        takeout_shop.order_500_allowed = true if combination_price_sum == 500
       end
       @takeout_shops << takeout_shop
     end
