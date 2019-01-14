@@ -125,7 +125,7 @@ class Epark::Takeout::Shop < ApplicationRecord
 
         if price_sum >= price_min && price_sum <= price_max && price_sum >= takeout_shop.minimum_order
           combination_prices << price_array.map do |price|
-            if prices.count {|price_hash| price_hash[:total_price] == price} > 3
+            if prices.count {|price_hash| price_hash[:total_price] == price} > 1
               prices.map do |price_hash|
                 if price_hash[:option_name].present?
                   {product_name: price_hash[:product_name], option_name: price_hash[:option_name], total_price: price}
