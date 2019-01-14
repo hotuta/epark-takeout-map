@@ -154,7 +154,11 @@ class Epark::Takeout::Shop < ApplicationRecord
 
         if combination_price_sum >= 500
           takeout_shop.combination_price_500_min = combination_price_sum if takeout_shop.combination_price_500_min.blank?
-          takeout_shop.combination_500 += "#{combination_price}\n"
+          if combination_price.any? {|hash| hash[:product_name]}
+            takeout_shop.combination_500 += "#{combination_price}\n"
+          else
+            takeout_shop.combination_500 += "#{combination_price.map {|hash| hash[:total_price]}}\n"
+          end
           takeout_shop.combination_500 += "合計#{combination_price_sum}円\n"
         end
 
