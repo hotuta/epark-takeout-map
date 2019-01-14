@@ -114,7 +114,7 @@ class Epark::Takeout::Shop < ApplicationRecord
 
   def self.combination(takeout_shop, prices, price_min, price_max)
     combination_prices = []
-    prices_array = prices.map { |h| h[:total_price] }.uniq.sort
+    prices_array = prices.map {|h| h[:total_price]}.uniq.sort
     prices_min = prices_array.min
 
     # 最大数/最小数の個数まで1つずつ増やして組み合わせてみる
@@ -124,13 +124,13 @@ class Epark::Takeout::Shop < ApplicationRecord
         price_sum = price_array.sum
 
         if price_sum >= price_min && price_sum <= price_max && price_sum >= takeout_shop.minimum_order
-          combination_prices << price_array.each do |price|
-            if prices.count { |price_hash| price_hash[:total_price] == price} > 3
+          combination_prices << price_array.map do |price|
+            if prices.count {|price_hash| price_hash[:total_price] == price} > 3
               prices.map do |price_hash|
                 if price_hash[:option_name].present?
                   {product_name: price_hash[:product_name], option_name: price_hash[:option_name], total_price: price}
                 else
-                  price
+                  {total_price: price}
                 end
               end.compact.uniq
             else
