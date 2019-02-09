@@ -24,7 +24,9 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     page = 1
     loop do
-      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.today.strftime("%Y/%m/%d")}&sort=1"
+      # なか卯スペシャル
+      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=%E3%81%AA%E3%81%8B%E5%8D%AF&latitude=&longitude=&receipt=2019%2F02%2F11&immediate=true&sort=1"
+      # url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.today.strftime("%Y/%m/%d")}&sort=1"
 
       header = {Accept: '*/*', X_Requested_With: 'XMLHttpRequest'}
       shops = get_res_to_obj(url, header)
