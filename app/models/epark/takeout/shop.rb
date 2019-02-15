@@ -15,6 +15,9 @@ class Epark::Takeout::Shop < ApplicationRecord
   end
 
   def self.get_shop_and_product
+    # TODO: Googleマイマップ自動更新設定
+    # TODO: Discordに失敗通知
+
     # FIXME: 情報を更新するために削除
     Epark::Takeout::Shop::Product.delete_all
     Epark::Takeout::Shop::Combination.delete_all
@@ -24,6 +27,8 @@ class Epark::Takeout::Shop < ApplicationRecord
 
     page = 1
     loop do
+      # TODO: 事前予約必要な店舗の取得を行うために、来週の月曜日の取得を行う
+
       # なか卯スペシャル
       url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=%E3%81%AA%E3%81%8B%E5%8D%AF&latitude=&longitude=&receipt=2019%2F02%2F11&immediate=true&sort=1"
       # url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.today.strftime("%Y/%m/%d")}&sort=1"
@@ -122,6 +127,9 @@ class Epark::Takeout::Shop < ApplicationRecord
 
   def self.combination(takeout_shop, prices, price_min, price_max)
     combination_prices = []
+    # TODO: 組み合わせ数が多すぎるとメモリー超過するため、組み合わせを削減する
+    # TODO: 個数が20個といった規定数を超える時、500円超えの組み合わせを削除
+    # TODO: 並列処理を要検討
     prices_array = prices.map {|h| h[:total_price]}.uniq.sort
     prices_min = prices_array.min
 
@@ -164,6 +172,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         combination_price_sum = combination_price.sum {|hash| hash[:total_price]}
         next if combination_price_sum > price_max
         takeout_shop.combination_price_min = combination_price_sum if i == 0
+        # TODO: 他オプあり用にオプ商品一覧を表示したい
 
         if combination_price_sum >= 500
           takeout_shop.combination_price_500_min = combination_price_sum if takeout_shop.combination_price_500_min.blank?
