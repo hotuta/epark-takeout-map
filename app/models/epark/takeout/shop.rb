@@ -77,7 +77,13 @@ class Epark::Takeout::Shop < ApplicationRecord
                     product.detail.options.each do |product_option|
                       product_option.lists.each do |list|
                         if list.price.present? && price + list.price <= price_max
-                          prices << {product_name: product_name, option_name: list.name, total_price: price + list.price, product_link: product_link}
+                          if list.type == 1
+                            total_price = price + list.price
+                          else
+                            total_price = price - list.price
+                          end
+
+                          prices << {product_name: product_name + list.name, option_name: list.name, total_price: total_price, product_link: product_link}
                         end
                       end
                     end
