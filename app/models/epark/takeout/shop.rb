@@ -64,11 +64,11 @@ class Epark::Takeout::Shop < ApplicationRecord
                 product_response = RestClient.get "https://takeout.epark.jp/ajax/order/box?product_id=#{targetid}"
                 product = JSON.parse(product_response, object_class: OpenStruct)
 
-                price = detail.css(".price").text.delete("円").gsub(/(\d{0,3}),(\d{3})/, '\1\2').to_i
+                price = product.detail.price
 
                 # 50円未満の商品を組み合わせを取得しようとすると処理時間が異様に長くなるため、暫定処置
                 if price <= price_max && price > 50
-                  product_name = detail.css("div.title.fn-product-name > a").first.text
+                  product_name = product.detail.name
                   product_link = detail.css("div.title.fn-product-name > a").first[:href]
 
                   prices << {product_name: product_name, total_price: price, product_link: product_link}
