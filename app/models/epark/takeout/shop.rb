@@ -124,24 +124,29 @@ class Epark::Takeout::Shop < ApplicationRecord
       # 重複組合せを順に取り出す
       prices_array.repeated_combination(count) do |price_array|
         price_sum = price_array.sum
+        next if price_sum < price_min && price_sum > price_max && price_sum < takeout_shop.minimum_order
 
-        if price_sum >= price_min && price_sum <= price_max && price_sum >= takeout_shop.minimum_order
-          combination_prices << price_array.map do |price|
-            if prices.count {|price_hash| price_hash[:total_price] == price} > 1
-              prices.map do |price_hash|
-                if price_hash[:option_name].present?
-                  {product_name: price_hash[:product_name], option_name: price_hash[:option_name], total_price: price}
-                else
-                  {total_price: price}
-                end
-              end.compact.uniq
-            else
-              prices.map do |price_hash|
-                price_hash if price_hash[:total_price] == price
-              end.compact
-            end
-          end.compact.flatten
-        end
+        combination_prices << price_array.map do |price|
+          select_price_only_products = prices.select{|hash| hash[:total_price] == price && hash[:option_name].blank?}
+
+          select_option_products = prices.select{|hash| hash[:total_price] == price && hash[:option_name].present?}
+
+          if select_price_only_products.present? && select_option_products.blank?
+            {total_price: select_price_only_products.first[:total_price]}
+          elsif select_price_only_products.present? && select_option_products.count >  1
+            select_option_product = select_option_products.first
+            {product_name: "【同一金額他(オプも)あり】"+select_option_product[:product_name], option_name: select_option_product[:option_name], total_price: select_option_product[:total_price]}
+          elsif select_price_only_products.present?
+            select_option_product = select_option_products.first
+            {product_name: "【同一金額他あり】"+select_option_product[:product_name], option_name: select_option_product[:option_name], total_price: select_option_product[:total_price]}
+          elsif select_option_products.count >  1
+            select_option_product = select_option_products.first
+            {product_name: "【同一金額他オプあり】"+select_option_product[:product_name], option_name: select_option_product[:option_name], total_price: select_option_product[:total_price]}
+          else
+            select_option_product = select_option_products.first
+            {product_name: select_option_product[:product_name], option_name: select_option_product[:option_name], total_price: select_option_product[:total_price]}
+          end
+        end.compact
       end
     end
 
