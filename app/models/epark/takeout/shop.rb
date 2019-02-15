@@ -105,7 +105,7 @@ class Epark::Takeout::Shop < ApplicationRecord
         end
 
         next if prices.blank?
-        combination(takeout_shop, prices, 50, price_max)
+        combination(takeout_shop, prices, takeout_shop.minimum_order, price_max)
       end
 
       columns = Epark::Takeout::Shop.column_names - ["id", "shop_url", "created_at", "updated_at"]
