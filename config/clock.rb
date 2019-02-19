@@ -7,7 +7,7 @@ module Clockwork
     puts "Running #{job}"
   end
 
-  every(6.hours, 'Epark::Takeout::Shop') do
+  every(24.hours, 'Epark::Takeout::Shop') do
     Epark::Takeout::Shop.get_shop_and_product
   end
 end
