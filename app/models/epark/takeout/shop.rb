@@ -29,7 +29,7 @@ class Epark::Takeout::Shop < ApplicationRecord
     loop do
       # TODO: 事前予約必要な店舗の取得を行うために、来週の月曜日の取得を行う
 
-      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.today.strftime("%Y/%m/%d")}&sort=1"
+      url = "https://takeout.epark.jp/rstList?page=#{page}&budget=0&category=none&keyword=&latitude=&longitude=&receipt=#{Date.tomorrow.strftime("%Y/%m/%d")}&sort=1"
       header = {Accept: '*/*', X_Requested_With: 'XMLHttpRequest'}
       shops = get_res_to_obj(url, header)
 
